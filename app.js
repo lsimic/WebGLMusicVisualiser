@@ -224,4 +224,8 @@ document.querySelector("#source").addEventListener("change", function(e) {
     player.audio.src = window.URL.createObjectURL(this.files[0]);
     player.onPause();
 });
+document.querySelector("#bg-img").addEventListener("change", function(e) {
+    console.log("bg img change");
+    document.body.style.backgroundImage = "url(" + window.URL.createObjectURL(this.files[0]) + ")";
+});
 
