@@ -7,5 +7,5 @@ void main()
 {
     float maxYSize = 0.333;
     float yOffset = -0.666;
-    gl_Position = vec4(aPos[0]*barWidth+aOffset, aPos[1]*aScale*maxYSize+yOffset, 0.0, 1.0);
+    gl_Position = vec4(aPos[0]*barWidth+aOffset, aPos[1]*abs(aScale)*maxYSize+yOffset, 0.0, 1.0);
 }

@@ -13,6 +13,10 @@ class Player {
         this.barInstanceSizeBuffer = undefined;
         this.canvas = undefined;
         this.gl = undefined;
+        this.audioCtx = undefined;
+        this.audioAnalyser = undefined;
+        this.audio = undefined;
+        this.interval = undefined;
     }
 
     init() {
@@ -56,13 +60,22 @@ class Player {
         // clear the screen
         this.gl.clearColor(0.0, 0.0, 0.5, 1.0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+
+        // set audio element
+        this.audio = document.querySelector("#player");
     }
 
     onResize(width, height) {
         // calculate appropriate number of bars
-        let count = Math.trunc(width / 12); // Minimum 12px for each bar
-        if(count > 256) {
-            count = 256; // Cap at 256 bars
+        // since fftSize must be a power if 2 between 2^5 and 2^15
+        // number of bars should be a power of 2 between 2^4 and 2^14
+        let count = Math.trunc(width / 8); // Minimum 8px for each bar
+        count = Math.pow(2, Math.round(Math.log2(count)))
+        if(count < 16) {
+            count = 16; // min 16 bars(fftSize = 32)
+        }
+        else if(count > 2048) {
+            count = 2048; // max 2048 bars(fftSize = 4096), unlikely
         }
         this.barCount = count;
         // Calculate barWidth in screenSpace and set uniform variable in shader
@@ -96,11 +109,11 @@ class Player {
             this.onResize(document.body.clientWidth, document.body.clientHeight);
         }
 
-        // TODO: get sizes for each bar from audio source instead of random generation
+        // get height values from analyser node.
+        this.audioAnalyser.fftSize = 2 * this.barCount;
         let sizes = new Float32Array(this.barCount);
-        for(let i = 0; i < this.barCount; i++) {
-            sizes[i] = Math.random();
-        }
+        this.audioAnalyser.getFloatTimeDomainData(sizes);
+        // populate the buffer with the data
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.barInstanceSizeBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, sizes, this.gl.DYNAMIC_DRAW);
 
@@ -111,14 +124,43 @@ class Player {
         // draw the bars, instanced
         this.gl.useProgram(this.barShaderProgram);
         this.gl.bindVertexArray(this.barVertexArray);
-        console.log(this.barCount);
         this.gl.drawElementsInstanced(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0, this.barCount);
         //let t2 = performance.now();
         //console.log(t2-t1);
+    }
+
+    onPlay() {
+        // Create audio context and analyser
+        this.audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+        this.audioAnalyser = this.audioCtx.createAnalyser();
+        // Set up the audio stream
+        let stream = this.audio.captureStream()
+        let aduioSource = this.audioCtx.createMediaStreamSource(stream)
+        aduioSource.connect(this.audioAnalyser);
+
+        // start playing audio
+        this.audio.play();
+        var t = this;
+
+        // set the interval and start rendering
+        this.interval = setInterval(function() {t.render();}, 1000/60);
+    }
+
+    onPause() {
+        // stop the audio
+        this.audio.pause();
+        // stop the interval
+        clearInterval(this.interval);
+        this.interval = undefined;
     }
 }
 
 let player = new Player();
 player.init();
 // for testing purposes
-setInterval(function() {player.render()}, 1000/60);
+//setInterval(function() {player.render()}, 1000/60);
+
+//event listeners for buttons
+document.querySelector("#player-controls #play").addEventListener("click", function() {player.onPlay();});
+document.querySelector("#player-controls #pause").addEventListener("click", function() {player.onPause();});
+
