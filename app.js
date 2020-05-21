@@ -11,12 +11,17 @@ class Player {
         this.barWidthLocation = undefined;
         this.barInstancePositionsBuffer = undefined;
         this.barInstanceSizeBuffer = undefined;
+
         this.canvas = undefined;
         this.gl = undefined;
+
         this.audioCtx = undefined;
         this.audioAnalyser = undefined;
         this.audio = undefined;
         this.interval = undefined;
+
+        this.progressBarBackground = undefined;
+        this.progressBar = undefined;
     }
 
     init() {
@@ -64,6 +69,40 @@ class Player {
         // set audio element
         this.audio = document.querySelector("#player");
         this.audio.pause();
+
+        // set progress bar elements
+        this.progressBar = document.querySelector("#progress-bar");
+        this.progressBarBackground = document.querySelector("#progress-bar-bg");
+        
+        // set progress bar events
+        this.boundOnProgressMouseMove = e => this.onProgressMouseMove(e);
+        this.progressBarBackground.addEventListener("mousedown", e => this.onProgressMouseDown(e));
+        this.progressBarBackground.addEventListener("mouseup", e => this.onProgressMouseUp(e));
+    }
+
+    onProgressMouseDown(e) {
+        // pause animation and playback
+        this.onPause();
+        // set progress bar width
+        this.progressBarBackground.addEventListener("mousemove", this.boundOnProgressMouseMove);
+    }
+
+    onProgressMouseMove(e) {
+        // update the bar width to mouse position
+        this.progressBar.style.width = ((e.clientX / document.body.clientWidth)*100).toString() + "%";
+    }
+
+    onProgressMouseUp(e) {
+        // set current time on audio
+        if(this.audio.currentTime && this.audio.duration) {
+            this.audio.currentTime = (e.clientX / document.body.clientWidth) * this.audio.duration;
+            this.onPlay();
+        }
+        else {
+            this.progressBar.style.width = "0%";
+        }
+        //remove mouse move event
+        this.progressBarBackground.removeEventListener("mousemove", this.boundOnProgressMouseMove);
     }
 
     onResize(width, height) {
@@ -80,7 +119,7 @@ class Player {
         }
         this.barCount = count;
         // Calculate barWidth in screenSpace and set uniform variable in shader
-        let barWidth = (2 / count) * 0.6667; //bar width in screen space coordinates
+        let barWidth = (2 / count) * 0.3333; //bar width in screen space coordinates
         this.gl.uniform1f(this.barWidthLocation, barWidth);
 
         // Calculate bar instance positions and set the buffer
@@ -128,9 +167,15 @@ class Player {
         this.gl.drawElementsInstanced(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0, this.barCount);
         //let t2 = performance.now();
         //console.log(t2-t1);
+
+        // update the progress bar width...
+        this.progressBar.style.width = ((this.audio.currentTime / this.audio.duration) * 100).toString() + "%";
     }
 
     onPlay() {
+        document.querySelector("#player-controls #play").style.display = "none";
+        document.querySelector("#player-controls #pause").style.display = "inline-block";
+
         // Create audio context and analyser
         this.audioCtx = new(window.AudioContext || window.webkitAudioContext)();
         this.audioAnalyser = this.audioCtx.createAnalyser();
@@ -155,6 +200,8 @@ class Player {
     }
 
     onPause() {
+        document.querySelector("#player-controls #play").style.display = "inline-block";
+        document.querySelector("#player-controls #pause").style.display = "none";
         // stop the audio
         this.audio.pause();
         // stop the interval
@@ -168,19 +215,13 @@ player.init();
 
 //event listeners for buttons
 document.querySelector("#player-controls #play").addEventListener("click", function() {
-    document.querySelector("#player-controls #play").style.display = "none";
-    document.querySelector("#player-controls #pause").style.display = "inline-block";
     player.onPlay();
 });
 document.querySelector("#player-controls #pause").addEventListener("click", function() {
-    document.querySelector("#player-controls #play").style.display = "inline-block";
-    document.querySelector("#player-controls #pause").style.display = "none";
     player.onPause();
 });
 document.querySelector("#source").addEventListener("change", function(e) {
     player.audio.src = window.URL.createObjectURL(this.files[0]);
     player.onPause();
-    document.querySelector("#player-controls #play").style.display = "inline-block";
-    document.querySelector("#player-controls #pause").style.display = "none";
 });
 

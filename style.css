@@ -15,22 +15,25 @@ canvas {
 #overlay {
     position: absolute;
     width: 100%;
-    height: 16.67%;
-    top: 83.33%;
+    height: 16%;
+    top: 84%;
     z-index: 1;
     color: #9BF3F0;
 }
 
 .controls {
     display: inline;
+}
 
+#controls {
+    padding-top: 1.5vh;
 }
 
 .btn {
     background-color: transparent;
     border: none;
-    padding: 12px;
-    font-size: 36px;
+    padding: 1vh;
+    font-size: 4vh;
     cursor: pointer;
     color: inherit;
     opacity: 1;
@@ -47,4 +50,18 @@ canvas {
 	height: 0.1px;
 	opacity: 0;
 	overflow: hidden;
+}
+
+.progress-bar-bg {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px solid #9BF3F0;
+    height: 1vh;
+    width: 100%;
+}
+
+.progress-bar {
+    position: absolute;
+    background-color: #9BF3F0;
+    height: 1vh;
 }
