@@ -3,6 +3,7 @@
 <head>
     <script type="module" src="app.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebGL music visualizer</title>
@@ -10,12 +11,18 @@
 <body>
     <canvas id="canvas"></canvas>
     <div id="overlay">
-        <audio id="player" controls autoplay="false">
-            <source src="test-file.mp3">
+        <audio id="player">
+            <source src="">
         </audio>
-        <div id="player-controls">
-            <button id="play">Play</button>
-            <button id="pause">Pause</button>
+        <div id="controls">
+            <input type="file" class="file-input" id="source" accept="audio/*"></input>
+            <label for="source" class="btn"><i class="far fa-file-audio"></i></label>
+            <div id="player-controls" class="controls">
+                <button class="btn" id="backward"><i class="fas fa-chevron-circle-left"></i></button>
+                <button class="btn" id="play"><i class="far fa-play-circle"></i></button>
+                <button class="btn" id="pause" style="display:none;"><i class="far fa-pause-circle"></i></button>
+                <button class="btn" id="forward"><i class="fas fa-chevron-circle-right"></i></button>
+            </div>
         </div>
     </div>
 </body>

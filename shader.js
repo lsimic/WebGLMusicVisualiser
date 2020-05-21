@@ -17,7 +17,7 @@ export const barFSSource =
 "out vec4 fragColor;\r\n" +
 "void main()\r\n" +
 "{\r\n" +
-"    fragColor = vec4(0.0f, 0.0f, 0.7f, 1.0f);\r\n" +
+"    fragColor = vec4(0.6f, 0.95f, 0.94f, 1.0f);\r\n" +
 "}\r\n";
 
 export function initShaderProgram(gl, vsSource, fsSource) {

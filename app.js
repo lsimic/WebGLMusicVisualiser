@@ -58,11 +58,12 @@ class Player {
         this.onResize(document.body.clientWidth, document.body.clientHeight);
 
         // clear the screen
-        this.gl.clearColor(0.0, 0.0, 0.5, 1.0);
+        this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
         // set audio element
         this.audio = document.querySelector("#player");
+        this.audio.pause();
     }
 
     onResize(width, height) {
@@ -118,7 +119,7 @@ class Player {
         this.gl.bufferData(this.gl.ARRAY_BUFFER, sizes, this.gl.DYNAMIC_DRAW);
 
         // clear the screen
-        this.gl.clearColor(0.0, 0.0, 0.2, 1.0);
+        this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
         // draw the bars, instanced
@@ -140,7 +141,14 @@ class Player {
 
         // start playing audio
         this.audio.play();
+
+        // set up event for onPause function when audio ends
         var t = this;
+        this.audio.addEventListener("ended", function() {
+            t.onPause(); 
+            document.querySelector("#player-controls #play").style.display = "inline-block";
+            document.querySelector("#player-controls #pause").style.display = "none";
+        });
 
         // set the interval and start rendering
         this.interval = setInterval(function() {t.render();}, 1000/60);
@@ -157,10 +165,22 @@ class Player {
 
 let player = new Player();
 player.init();
-// for testing purposes
-//setInterval(function() {player.render()}, 1000/60);
 
 //event listeners for buttons
-document.querySelector("#player-controls #play").addEventListener("click", function() {player.onPlay();});
-document.querySelector("#player-controls #pause").addEventListener("click", function() {player.onPause();});
+document.querySelector("#player-controls #play").addEventListener("click", function() {
+    document.querySelector("#player-controls #play").style.display = "none";
+    document.querySelector("#player-controls #pause").style.display = "inline-block";
+    player.onPlay();
+});
+document.querySelector("#player-controls #pause").addEventListener("click", function() {
+    document.querySelector("#player-controls #play").style.display = "inline-block";
+    document.querySelector("#player-controls #pause").style.display = "none";
+    player.onPause();
+});
+document.querySelector("#source").addEventListener("change", function(e) {
+    player.audio.src = window.URL.createObjectURL(this.files[0]);
+    player.onPause();
+    document.querySelector("#player-controls #play").style.display = "inline-block";
+    document.querySelector("#player-controls #pause").style.display = "none";
+});
 
