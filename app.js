@@ -189,7 +189,13 @@ class Player {
         this.audioCtx = new(window.AudioContext || window.webkitAudioContext)();
         this.audioAnalyser = this.audioCtx.createAnalyser();
         // Set up the audio stream
-        let stream = this.audio.captureStream()
+        let stream = undefined;
+        if(this.audio.captureStream) {
+            stream = this.audio.captureStream();
+        }
+        else {
+            stream = this.audio.mozCaptureStream();
+        }
         let aduioSource = this.audioCtx.createMediaStreamSource(stream)
         aduioSource.connect(this.audioAnalyser);
 
