@@ -188,16 +188,11 @@ class Player {
         // Create audio context and analyser
         this.audioCtx = new(window.AudioContext || window.webkitAudioContext)();
         this.audioAnalyser = this.audioCtx.createAnalyser();
+
         // Set up the audio stream
-        let stream = undefined;
-        if(this.audio.captureStream) {
-            stream = this.audio.captureStream();
-        }
-        else {
-            stream = this.audio.mozCaptureStream();
-        }
-        let aduioSource = this.audioCtx.createMediaStreamSource(stream)
+        let aduioSource = this.audioCtx.createMediaElementSource(this.audio)
         aduioSource.connect(this.audioAnalyser);
+        aduioSource.connect(this.audioCtx.destination);
 
         // start playing audio
         this.audio.play();
@@ -268,13 +263,15 @@ player.init();
 document.querySelector("#player-controls #play").addEventListener("click", function() {
     player.onPlay();
 });
+
 document.querySelector("#player-controls #pause").addEventListener("click", function() {
     player.onPause();
 });
-document.querySelector("#source").addEventListener("change", function(e) {
-    player.audio.src = window.URL.createObjectURL(this.files[0]);
-    document.querySelector("#title").innerHTML = this.files[0].name;
 
+document.querySelector("#source").addEventListener("change", function(e) {
+    document.querySelector("#audio-src").src = window.URL.createObjectURL(this.files[0]);
+    document.querySelector("#title").innerHTML = this.files[0].name;
+    player.audio.load();
     player.audio.addEventListener("loadedmetadata", function(e) {
         let minutes = Math.trunc(e.target.duration/60);
         let seconds = e.target.duration - (60 * minutes);
@@ -290,9 +287,11 @@ document.querySelector("#source").addEventListener("change", function(e) {
 
     player.onPause();
 });
+
 document.querySelector("#bg-img").addEventListener("change", function(e) {
     document.body.style.backgroundImage = "url(" + window.URL.createObjectURL(this.files[0]) + ")";
 });
+
 document.querySelector("#color").addEventListener("change", function(e) {
     player.onColorChange(e);
 });
