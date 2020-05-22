@@ -269,6 +269,7 @@ document.querySelector("#player-controls #pause").addEventListener("click", func
 });
 
 document.querySelector("#source").addEventListener("change", function(e) {
+    player.audioCtx.resume()
     document.querySelector("#audio-src").src = window.URL.createObjectURL(this.files[0]);
     document.querySelector("#title").innerHTML = this.files[0].name;
     player.audio.load();
