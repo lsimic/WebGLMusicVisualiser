@@ -31,6 +31,7 @@ canvas {
 
 #controls {
     padding-top: 1.5vh;
+    display: block;
 }
 
 .btn {
@@ -68,4 +69,20 @@ canvas {
     position: absolute;
     background-color: #9BF3F0;
     height: 1vh;
+}
+
+.title {
+    font-family: Helvetica, Arial, sans-serif;
+    font-weight: 300;
+    font-size: 2vh;
+    padding: 2vh;
+    display: inline;
+}
+
+.timer {
+    float:right;
+    font-family: Helvetica, Arial, sans-serif;
+    font-weight: 300;
+    font-size: 2vh;
+    padding: 3vh 2vh 2vh 2vh;
 }

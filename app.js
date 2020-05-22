@@ -22,6 +22,7 @@ class Player {
 
         this.progressBarBackground = undefined;
         this.progressBar = undefined;
+        this.timer = undefined;
     }
 
     init() {
@@ -73,6 +74,7 @@ class Player {
         // set progress bar elements
         this.progressBar = document.querySelector("#progress-bar");
         this.progressBarBackground = document.querySelector("#progress-bar-bg");
+        this.timer = document.querySelector("#timer");
         
         // set progress bar events
         this.boundOnProgressMouseMove = e => this.onProgressMouseMove(e);
@@ -90,6 +92,7 @@ class Player {
     onProgressMouseMove(e) {
         // update the bar width to mouse position
         this.progressBar.style.width = ((e.clientX / document.body.clientWidth)*100).toString() + "%";
+        this.updateTimer(this.audio.duration * (e.clientX / document.body.clientWidth))
     }
 
     onProgressMouseUp(e) {
@@ -145,7 +148,6 @@ class Player {
         // This results in perhaps a few fucky frames, but i think that is unavoidable using any method.
         //let t1 = performance.now();
         if(this.canvas.width != document.body.clientWidth || this.canvas.height != document.body.clientHeight) {
-            console.log("window resized");
             this.onResize(document.body.clientWidth, document.body.clientHeight);
         }
 
@@ -170,6 +172,9 @@ class Player {
 
         // update the progress bar width...
         this.progressBar.style.width = ((this.audio.currentTime / this.audio.duration) * 100).toString() + "%";
+
+        // update the timer
+        this.updateTimer(this.audio.currentTime);
     }
 
     onPlay() {
@@ -208,6 +213,27 @@ class Player {
         clearInterval(this.interval);
         this.interval = undefined;
     }
+
+    updateTimer(currentTime) {
+        let minutes = Math.trunc(this.audio.duration/60);
+        let seconds = this.audio.duration - (60 * minutes);
+        let currentMinutes = Math.trunc(currentTime/60);
+        let currentSeconds = currentTime - (60 * currentMinutes);
+        let text = "";
+        if(currentSeconds <= 10) {
+            text = currentMinutes.toString() + ":0" + Math.trunc(currentSeconds) + "/";
+        }
+        else {
+            text = currentMinutes.toString() + ":" + Math.trunc(currentSeconds) + "/";
+        }
+        if(seconds <= 10) {
+            text = text + minutes.toString() + ":0" + Math.trunc(seconds);
+        }
+        else {
+            text = text + minutes.toString() + ":" + Math.trunc(seconds);
+        }
+        this.timer.innerHTML = text;
+    }
 }
 
 let player = new Player();
@@ -222,10 +248,25 @@ document.querySelector("#player-controls #pause").addEventListener("click", func
 });
 document.querySelector("#source").addEventListener("change", function(e) {
     player.audio.src = window.URL.createObjectURL(this.files[0]);
+    document.querySelector("#title").innerHTML = this.files[0].name;
+
+    player.audio.addEventListener("loadedmetadata", function(e) {
+        let minutes = Math.trunc(e.target.duration/60);
+        let seconds = e.target.duration - (60 * minutes);
+        let text = "";
+        if(seconds <= 10) {
+            text = "0:00/" + minutes.toString() + ":0" + Math.trunc(seconds);
+        }
+        else {
+            text = "0:00/" + minutes.toString() + ":" + Math.trunc(seconds);
+        }
+        document.querySelector("#timer").innerHTML = text;
+    });
+
     player.onPause();
 });
 document.querySelector("#bg-img").addEventListener("change", function(e) {
-    console.log("bg img change");
     document.body.style.backgroundImage = "url(" + window.URL.createObjectURL(this.files[0]) + ")";
 });
+
 
