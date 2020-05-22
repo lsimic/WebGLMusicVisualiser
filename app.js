@@ -84,6 +84,15 @@ class Player {
         this.boundOnProgressMouseMove = e => this.onProgressMouseMove(e);
         this.progressBarBackground.addEventListener("mousedown", e => this.onProgressMouseDown(e));
         this.progressBarBackground.addEventListener("mouseup", e => this.onProgressMouseUp(e));
+    
+        // initialize audio context, analyser...
+        this.audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+        this.audioAnalyser = this.audioCtx.createAnalyser();
+
+        // Set up the audio stream
+        let aduioSource = this.audioCtx.createMediaElementSource(this.audio)
+        aduioSource.connect(this.audioAnalyser);
+        aduioSource.connect(this.audioCtx.destination);
     }
 
     onProgressMouseDown(e) {
@@ -185,15 +194,6 @@ class Player {
         document.querySelector("#player-controls #play").style.display = "none";
         document.querySelector("#player-controls #pause").style.display = "inline-block";
 
-        // Create audio context and analyser
-        this.audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-        this.audioAnalyser = this.audioCtx.createAnalyser();
-
-        // Set up the audio stream
-        let aduioSource = this.audioCtx.createMediaElementSource(this.audio)
-        aduioSource.connect(this.audioAnalyser);
-        aduioSource.connect(this.audioCtx.destination);
-
         // start playing audio
         this.audio.play();
 
@@ -206,7 +206,7 @@ class Player {
         });
 
         // set the interval and start rendering
-        this.interval = setInterval(function() {t.render();}, 1000/60);
+        this.interval = setInterval(function() {t.render();}, 2000/60);
     }
 
     onPause() {
