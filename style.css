@@ -86,3 +86,17 @@ canvas {
     font-size: 2vh;
     padding: 3vh 2vh 2vh 2vh;
 }
+
+.volume-bar-bg {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px solid #9BF3F0;
+    height: 1vh;
+    width: 36vh;
+}
+
+.volume-bar {
+    position: absolute;
+    background-color: #9BF3F0;
+    height: 1vh;
+}

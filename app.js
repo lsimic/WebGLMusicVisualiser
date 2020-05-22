@@ -256,8 +256,59 @@ class Player {
     }
 }
 
+class VolumeControl {
+    constructor() {
+        this.sliderBackground = undefined;
+        this.slider = undefined;
+        this.audio = undefined;
+        this.boundOnVolMouseMove = undefined;
+    }
+
+    init() {
+        this.audio = document.querySelector("#player");
+        this.audio.volume = 0.5;
+        this.slider = document.querySelector("#volume-bar");
+        this.sliderBackground = document.querySelector("#volume-bar-bg");
+        this.slider.style.width = (0.5 * 36).toString() + "vh";
+
+        // Set up events
+        this.boundOnVolMouseMove = e => this.onVolMouseMove(e);
+        this.sliderBackground.addEventListener("mousedown", e => this.onVolMouseDown(e));
+        this.sliderBackground.addEventListener("mouseup", e => this.onVolMouseUp(e));
+    }
+
+    onVolMouseDown(e) {
+        this.onVolMouseMove(e);
+        this.sliderBackground.addEventListener("mousemove", this.boundOnVolMouseMove);
+    }
+
+    onVolMouseUp(e) {
+        this.onVolMouseMove(e);
+        this.sliderBackground.removeEventListener("mousemove", this.boundOnVolMouseMove);
+    }
+
+    onVolMouseMove(e) {
+        let pct = ((e.clientX / this.sliderBackground.offsetWidth));
+        if(pct > 1) {
+            pct = 1;
+        }
+        this.slider.style.width = (pct*36).toString() + "vh";
+        this.audio.volume = pct;
+        this.slider.style.width = (pct * 36).toString() + "vh"
+    }
+
+    onColorChange(e) {
+        let hex = e.target.value;
+        this.slider.style.backgroundColor = hex;
+        this.sliderBackground.style.borderColor = hex;
+    }
+}
+
 let player = new Player();
 player.init();
+
+let volCtrl = new VolumeControl();
+volCtrl.init();
 
 //event listeners for buttons
 document.querySelector("#player-controls #play").addEventListener("click", function() {
@@ -295,4 +346,5 @@ document.querySelector("#bg-img").addEventListener("change", function(e) {
 
 document.querySelector("#color").addEventListener("change", function(e) {
     player.onColorChange(e);
+    volCtrl.onColorChange(e);
 });
