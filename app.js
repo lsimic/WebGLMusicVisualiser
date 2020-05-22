@@ -9,6 +9,7 @@ class Player {
         this.barShaderProgram = undefined;
         this.barVertexArray = undefined;
         this.barWidthLocation = undefined;
+        this.barColorLocation = undefined;
         this.barInstancePositionsBuffer = undefined;
         this.barInstanceSizeBuffer = undefined;
 
@@ -40,10 +41,13 @@ class Player {
         this.barShaderProgram = initShaderProgram(this.gl, barVSSource, barFSSource);
         this.barVertexArray = initVertexArrayObject(this.gl, barVertices, barIndices);
 
-        // get bar width uniform location
+        // get bar width and color uniform location
         this.gl.useProgram(this.barShaderProgram);
 
         this.barWidthLocation = this.gl.getUniformLocation(this.barShaderProgram, "barWidth");
+        this.barColorLocation = this.gl.getUniformLocation(this.barShaderProgram, "aColor");
+        // bind barColor to default value
+        this.gl.uniform3fv(this.barColorLocation, new Float32Array([0.608, 0.953, 0.941]));
         // create instnce position buffer for bars and bind it to the vao.
         this.barInstancePositionsBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.barInstancePositionsBuffer);
@@ -234,6 +238,21 @@ class Player {
         }
         this.timer.innerHTML = text;
     }
+
+    onColorChange(e) {
+        let hex = e.target.value;
+        document.querySelector("#overlay").style.color = hex;
+        this.progressBar.style.backgroundColor = hex;
+        this.progressBarBackground.style.borderColor = hex;
+
+        // change color uniform value in the shader
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        let r = parseInt(result[1], 16)/255;
+        let g = parseInt(result[2], 16)/255;
+        let b = parseInt(result[3], 16)/255;
+        this.gl.useProgram(this.barShaderProgram);
+        this.gl.uniform3fv(this.barColorLocation, new Float32Array([r, g, b]));
+    }
 }
 
 let player = new Player();
@@ -268,5 +287,6 @@ document.querySelector("#source").addEventListener("change", function(e) {
 document.querySelector("#bg-img").addEventListener("change", function(e) {
     document.body.style.backgroundImage = "url(" + window.URL.createObjectURL(this.files[0]) + ")";
 });
-
-
+document.querySelector("#color").addEventListener("change", function(e) {
+    player.onColorChange(e);
+});
