@@ -64,6 +64,9 @@ canvas {
     height: 1vh;
     width: 100%;
 }
+.progress-bar-bg:hover {
+    cursor: pointer;
+}
 
 .progress-bar {
     position: absolute;
@@ -94,9 +97,25 @@ canvas {
     height: 1vh;
     width: 36vh;
 }
+.volume-bar-bg:hover {
+    cursor: pointer;
+}
 
 .volume-bar {
     position: absolute;
     background-color: #9BF3F0;
     height: 1vh;
+}
+
+.footer {
+    padding-top: 2vh;
+}
+
+.footer-link:link {
+    text-decoration: none;
+    font-family: Helvetica, Arial, sans-serif;
+    color:inherit;
+}
+.footer-link:visited {
+    color:inherit;
 }
