@@ -3,12 +3,10 @@ import { initBarShaderProgram, initCircleShaderProgram } from "./shader.js"
 
 class Player {
     constructor() {
-        // circle and bar common
+        // bar specific
         this.barCount = undefined;
         this.barSizes = undefined;
         this.barInstanceSizeBuffer = undefined;
-
-        // bar specific
         this.barVertexArray = undefined;
         this.barPositions = undefined;
         this.barShaderProgram = undefined;
@@ -17,6 +15,9 @@ class Player {
         this.barInstancePositionsBuffer = undefined;
 
         //circle specifis
+        this.circleCount = undefined;
+        this.circleSizes = undefined;
+        this.circleInstanceSizeBuffer = undefined;
         this.circleVertexArray = undefined;
         this.circleRotations = undefined;
         this.circleShaderProgram = undefined;
@@ -97,8 +98,9 @@ class Player {
         this.gl.enableVertexAttribArray(1);
         this.gl.vertexAttribDivisor(1, 1);
 
-        // bind existing instance size buffer for bars to the circle vao
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.barInstanceSizeBuffer);
+        // create instance size buffer for circle and bind it to the vao
+        this.circleInstanceSizeBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.circleInstanceSizeBuffer);
         this.gl.bindVertexArray(this.circleVertexArray);
         this.gl.vertexAttribPointer(2, 1, this.gl.FLOAT, false, 1*4, 0);
         this.gl.enableVertexAttribArray(2);
@@ -173,6 +175,11 @@ class Player {
         else if(count > 2048) {
             count = 2048; // max 2048 bars(fftSize = 4096), unlikely
         }
+        let circleCount = count;
+        if(circleCount > 128) {
+            circleCount = 128;
+        }
+        this.circleCount = circleCount;
         this.barCount = count;
 
         // Calculate barWidth in screenSpace and set uniform variable in shaders
@@ -180,8 +187,9 @@ class Player {
         this.gl.useProgram(this.barShaderProgram);
         this.gl.uniform1f(this.barWidthLocation, barWidth);
 
+        let circleWidth = ( 2 / circleCount) * 0.3333; // circle width in screen space coordinates.
         this.gl.useProgram(this.circleShaderProgram);
-        this.gl.uniform1f(this.circleWidthLocation, barWidth);
+        this.gl.uniform1f(this.circleWidthLocation, circleWidth);
         this.gl.uniform1f(this.circleRatioLocation, height / width);
 
         // Calculate bar instance positions and set the buffer
@@ -195,9 +203,9 @@ class Player {
         this.gl.bufferData(this.gl.ARRAY_BUFFER, positions, this.gl.DYNAMIC_DRAW);
 
         // Calculate circle instance rotations and set the buffer
-        let rotations = new Float32Array(count);
-        spacing = (2 * Math.PI) / count;
-        for(let i = 0; i < count; i++) {
+        let rotations = new Float32Array(circleCount);
+        spacing = (2 * Math.PI) / circleCount;
+        for(let i = 0; i < circleCount; i++) {
             rotations[i] = i * spacing;
         }
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.circleInstanceRotationsBuffer);
@@ -228,6 +236,20 @@ class Player {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.barInstanceSizeBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, sizes, this.gl.DYNAMIC_DRAW);
 
+        // get height values and populate circle instance size buffer
+        if(this.circleCount != this.barCount) {
+            this.audioAnalyser.fftSize = 2 * this.circleCount
+            let circleSizes = new Float32Array(this.circleCount);
+            this.audioAnalyser.getFloatTimeDomainData(circleSizes);
+            // populate buffer
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.circleInstanceSizeBuffer);
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, circleSizes, this.gl.DYNAMIC_DRAW);
+        }
+        else {
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.circleInstanceSizeBuffer);
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, sizes, this.gl.DYNAMIC_DRAW);
+        }
+
         // clear the screen
         this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -240,7 +262,7 @@ class Player {
         // draw the circle, instanced
         this.gl.useProgram(this.circleShaderProgram);
         this.gl.bindVertexArray(this.circleVertexArray);
-        this.gl.drawElementsInstanced(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0, this.barCount);
+        this.gl.drawElementsInstanced(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0, this.circleCount);
 
         //let t2 = performance.now();
         //console.log(t2-t1);
