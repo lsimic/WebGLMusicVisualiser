@@ -1,5 +1,5 @@
 import { barVertices, barIndices, initVertexArrayObject } from "./vertexarray.js"
-import { barVSSource, barFSSource, initShaderProgram} from "./shader.js"
+import { barVSSource, barFSSource, initBarShaderProgram } from "./shader.js"
 
 class Player {
     constructor() {
@@ -26,7 +26,7 @@ class Player {
         this.timer = undefined;
     }
 
-    init() {
+    async init() {
         this.canvas = document.querySelector("#canvas");
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
@@ -38,7 +38,7 @@ class Player {
         }
 
         // initialize shader and vao
-        this.barShaderProgram = initShaderProgram(this.gl, barVSSource, barFSSource);
+        this.barShaderProgram = await initBarShaderProgram(this.gl);
         this.barVertexArray = initVertexArrayObject(this.gl, barVertices, barIndices);
 
         // get bar width and color uniform location
