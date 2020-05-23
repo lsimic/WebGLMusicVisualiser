@@ -1,9 +1,18 @@
 const barVSUri = "./shaders/bar_vs.glsl";
 const barFSUri ="./shaders/bar_fs.glsl";
+const circleVSUri = "./shaders/circle_vs.glsl";
 
 export async function initBarShaderProgram(gl) {
     let fetchFs = await fetch(barFSUri);
     let fetchVs = await fetch(barVSUri);
+    let fsData = await (await fetchFs.blob()).text();
+    let vsData = await (await fetchVs.blob()).text();
+    return initShaderProgram(gl, vsData, fsData);
+}
+
+export async function initCircleShaderProgram(gl) {
+    let fetchFs = await fetch(barFSUri);
+    let fetchVs = await fetch(circleVSUri);
     let fsData = await (await fetchFs.blob()).text();
     let vsData = await (await fetchVs.blob()).text();
     return initShaderProgram(gl, vsData, fsData);

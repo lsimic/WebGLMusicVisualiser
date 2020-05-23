@@ -1,17 +1,29 @@
 import { barVertices, barIndices, initVertexArrayObject } from "./vertexarray.js"
-import { barVSSource, barFSSource, initBarShaderProgram } from "./shader.js"
+import { initBarShaderProgram, initCircleShaderProgram } from "./shader.js"
 
 class Player {
     constructor() {
+        // circle and bar common
         this.barCount = undefined;
-        this.barPositions = undefined;
         this.barSizes = undefined;
-        this.barShaderProgram = undefined;
+        this.barInstanceSizeBuffer = undefined;
+
+        // bar specific
         this.barVertexArray = undefined;
+        this.barPositions = undefined;
+        this.barShaderProgram = undefined;
         this.barWidthLocation = undefined;
         this.barColorLocation = undefined;
         this.barInstancePositionsBuffer = undefined;
-        this.barInstanceSizeBuffer = undefined;
+
+        //circle specifis
+        this.circleVertexArray = undefined;
+        this.circleRotations = undefined;
+        this.circleShaderProgram = undefined;
+        this.circleWidthLocation = undefined;
+        this.circleColorLocation = undefined;
+        this.circleInstanceRotationsBuffer = undefined;
+        this.circleRatioLocation = undefined;
 
         this.canvas = undefined;
         this.gl = undefined;
@@ -37,17 +49,30 @@ class Player {
             return;
         }
 
-        // initialize shader and vao
+        // initialize shaders and vao
         this.barShaderProgram = await initBarShaderProgram(this.gl);
+        this.circleShaderProgram = await initCircleShaderProgram(this.gl);
+
+        // initialize vao
         this.barVertexArray = initVertexArrayObject(this.gl, barVertices, barIndices);
+        this.circleVertexArray = initVertexArrayObject(this.gl, barVertices, barIndices);
 
         // get bar width and color uniform location
         this.gl.useProgram(this.barShaderProgram);
-
         this.barWidthLocation = this.gl.getUniformLocation(this.barShaderProgram, "barWidth");
         this.barColorLocation = this.gl.getUniformLocation(this.barShaderProgram, "aColor");
         // bind barColor to default value
         this.gl.uniform3fv(this.barColorLocation, new Float32Array([0.608, 0.953, 0.941]));
+
+        // get circle width and color uniform location
+        this.gl.useProgram(this.circleShaderProgram);
+        this.circleWidthLocation = this.gl.getUniformLocation(this.circleShaderProgram, "barWidth");
+        this.circleColorLocation = this.gl.getUniformLocation(this.circleShaderProgram, "aColor");
+        this.circleRatioLocation = this.gl.getUniformLocation(this.circleShaderProgram, "ratio");
+        // bind color and ratio to default value
+        this.gl.uniform3fv(this.circleColorLocation, new Float32Array([0.608, 0.953, 0.941]));
+        this.gl.uniform1f(this.circleRatioLocation, 1.0);
+
         // create instnce position buffer for bars and bind it to the vao.
         this.barInstancePositionsBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.barInstancePositionsBuffer);
@@ -64,7 +89,22 @@ class Player {
         this.gl.enableVertexAttribArray(2);
         this.gl.vertexAttribDivisor(2, 1);
 
-        // Call onResize to initialize barCount and position buffers...
+        // create instance rotation buffer for circle and bind it to the vao
+        this.circleInstanceRotationsBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.circleInstanceRotationsBuffer);
+        this.gl.bindVertexArray(this.circleVertexArray);
+        this.gl.vertexAttribPointer(1, 1, this.gl.FLOAT, false, 1*4, 0);
+        this.gl.enableVertexAttribArray(1);
+        this.gl.vertexAttribDivisor(1, 1);
+
+        // bind existing instance size buffer for bars to the circle vao
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.barInstanceSizeBuffer);
+        this.gl.bindVertexArray(this.circleVertexArray);
+        this.gl.vertexAttribPointer(2, 1, this.gl.FLOAT, false, 1*4, 0);
+        this.gl.enableVertexAttribArray(2);
+        this.gl.vertexAttribDivisor(2, 1);
+
+        // Call onResize to initialize barCount and position/rotation buffers...
         this.onResize(document.body.clientWidth, document.body.clientHeight);
 
         // clear the screen
@@ -134,9 +174,15 @@ class Player {
             count = 2048; // max 2048 bars(fftSize = 4096), unlikely
         }
         this.barCount = count;
-        // Calculate barWidth in screenSpace and set uniform variable in shader
+
+        // Calculate barWidth in screenSpace and set uniform variable in shaders
         let barWidth = (2 / count) * 0.3333; //bar width in screen space coordinates
+        this.gl.useProgram(this.barShaderProgram);
         this.gl.uniform1f(this.barWidthLocation, barWidth);
+
+        this.gl.useProgram(this.circleShaderProgram);
+        this.gl.uniform1f(this.circleWidthLocation, barWidth);
+        this.gl.uniform1f(this.circleRatioLocation, height / width);
 
         // Calculate bar instance positions and set the buffer
         let positions = new Float32Array(count);
@@ -148,18 +194,28 @@ class Player {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.barInstancePositionsBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, positions, this.gl.DYNAMIC_DRAW);
 
+        // Calculate circle instance rotations and set the buffer
+        let rotations = new Float32Array(count);
+        spacing = (2 * Math.PI) / count;
+        for(let i = 0; i < count; i++) {
+            rotations[i] = i * spacing;
+        }
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.circleInstanceRotationsBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, rotations, this.gl.DYNAMIC_DRAW);
+
         // Update canvas and gl viewport size
         this.canvas.width = width;
         this.canvas.height = height;
         this.gl.viewport(0, 0, width, height);
-
     }
 
     render() {
         // Check if window was resized...
         // Not using resize event, to ensure that evernything the size is not changed during the drawing calls.
         // This results in perhaps a few fucky frames, but i think that is unavoidable using any method.
+
         //let t1 = performance.now();
+
         if(this.canvas.width != document.body.clientWidth || this.canvas.height != document.body.clientHeight) {
             this.onResize(document.body.clientWidth, document.body.clientHeight);
         }
@@ -180,6 +236,12 @@ class Player {
         this.gl.useProgram(this.barShaderProgram);
         this.gl.bindVertexArray(this.barVertexArray);
         this.gl.drawElementsInstanced(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0, this.barCount);
+
+        // draw the circle, instanced
+        this.gl.useProgram(this.circleShaderProgram);
+        this.gl.bindVertexArray(this.circleVertexArray);
+        this.gl.drawElementsInstanced(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0, this.barCount);
+
         //let t2 = performance.now();
         //console.log(t2-t1);
 
@@ -253,6 +315,8 @@ class Player {
         let b = parseInt(result[3], 16)/255;
         this.gl.useProgram(this.barShaderProgram);
         this.gl.uniform3fv(this.barColorLocation, new Float32Array([r, g, b]));
+        this.gl.useProgram(this.circleShaderProgram);
+        this.gl.uniform3fv(this.circleColorLocation, new Float32Array([r, g, b]));
     }
 }
 
