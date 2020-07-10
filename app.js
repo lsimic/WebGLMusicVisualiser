@@ -46,7 +46,7 @@ class Player {
 
         this.gl = canvas.getContext("webgl2");
         if(this.gl === null) {
-            alert("Unable to initialize WebGL2.");
+            alert("Unable to initialize WebGL2. Browser not supported. Please update your browser.");
             return;
         }
 
@@ -130,6 +130,10 @@ class Player {
         // initialize audio context, analyser...
         this.audioCtx = new(window.AudioContext || window.webkitAudioContext)();
         this.audioAnalyser = this.audioCtx.createAnalyser();
+        if(this.audioCtx === null || this.audioAnalyser === null || this.audio === null) {
+            alert("Unable to initialize audio Context. Browser not supported. Please update your browser.");
+            return;
+        }
 
         // Set up the audio stream
         let aduioSource = this.audioCtx.createMediaElementSource(this.audio)
